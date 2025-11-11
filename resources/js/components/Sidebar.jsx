@@ -1,7 +1,21 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const menuModules = [
+    {
+        id: 0,
+        name: 'Dashboard',
+        icon: (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 4h4" />
+            </svg>
+        ),
+        items: [
+            { name: 'Inicio', path: '/' }
+        ],
+        visibleForRoles: ['all']
+    },
     {
         id: 1,
         name: 'Autenticación y Control de Acceso',
@@ -11,9 +25,10 @@ const menuModules = [
             </svg>
         ),
         items: [
-            { name: 'Usuarios', path: '/usuarios' },
-            { name: 'Roles', path: '/roles' }
-        ]
+            { name: 'CU3 - Gestionar Usuarios', path: '/usuarios', cu: 'CU3', visibleForRoles: ['Administrador'] },
+            { name: 'CU4 - Gestionar Roles', path: '/roles', cu: 'CU4', visibleForRoles: ['Administrador'] }
+        ],
+        visibleForRoles: ['Administrador']
     },
     {
         id: 2,
@@ -24,12 +39,13 @@ const menuModules = [
             </svg>
         ),
         items: [
-            { name: 'Docentes', path: '/docentes' },
-            { name: 'Materias', path: '/materias' },
-            { name: 'Grupos', path: '/grupos' },
-            { name: 'Aulas', path: '/aulas' },
-            { name: 'Infraestructuras', path: '/infraestructuras' }
-        ]
+            { name: 'CU5 - Gestionar Docentes', path: '/docentes', cu: 'CU5', visibleForRoles: ['Administrador'] },
+            { name: 'CU6 - Gestionar Materias', path: '/materias', cu: 'CU6', visibleForRoles: ['Coordinador Académico', 'Administrador'] },
+            { name: 'CU7 - Gestionar Grupos', path: '/grupos', cu: 'CU7', visibleForRoles: ['Coordinador Académico', 'Administrador'] },
+            { name: 'CU8 - Gestionar Aulas', path: '/aulas', cu: 'CU8', visibleForRoles: ['Administrador'] },
+            { name: 'CU9 - Gestionar Infraestructura', path: '/infraestructura', cu: 'CU9', visibleForRoles: ['Administrador'] }
+        ],
+        visibleForRoles: ['Coordinador Académico', 'Administrador']
     },
     {
         id: 3,
@@ -40,24 +56,29 @@ const menuModules = [
             </svg>
         ),
         items: [
-            { name: 'Horarios', path: '/horarios' },
-            { name: 'Asignaciones', path: '/asignaciones' }
-        ]
+            { name: 'CU10 - Configurar Malla Horaria', path: '/configuracion-malla', cu: 'CU10', visibleForRoles: ['Coordinador Académico', 'Administrador'] },
+            { name: 'CU11 - Asignar Carga Horaria', path: '/carga-horaria', cu: 'CU11', visibleForRoles: ['Coordinador Académico', 'Administrador'] },
+            { name: 'CU12 - Gestionar Conflictos', path: '/conflictos-horarios', cu: 'CU12', visibleForRoles: ['Coordinador Académico', 'Administrador'] },
+            { name: 'CU13 - Consultar disponibilidad de aulas', path: '/disponibilidad-aulas', cu: 'CU13', visibleForRoles: ['Coordinador Académico', 'Administrador'] }
+        ],
+        visibleForRoles: ['Coordinador Académico', 'Administrador']
     },
     {
         id: 4,
         name: 'Asistencia Docente',
         icon: (
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
         ),
         items: [
-            { name: 'Asistencias', path: '/asistencias' }
-        ]
+            { name: 'CU14 - Registrar Asistencia', path: '/asistencias', cu: 'CU14' },
+            { name: 'CU15 - Gestionar Inasistencias y Justificaciones', path: '/gestionar-inasistencias', cu: 'CU15' }
+        ],
+        visibleForRoles: ['Administrador', 'Coordinador Académico']
     },
     {
-        id: 5,
+        id: 6,
         name: 'Auditoría y Trazabilidad',
         icon: (
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,26 +86,29 @@ const menuModules = [
             </svg>
         ),
         items: [
-            { name: 'Bitácora', path: '/bitacora' }
-        ]
+            { name: 'CU18 - Registrar Bitácora', path: '/bitacora', cu: 'CU18' }
+        ],
+        visibleForRoles: ['Administrador']
     },
     {
-        id: 6,
-        name: 'Dashboard',
+        id: 7,
+        name: 'Monitoreo y Reportes',
         icon: (
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
         ),
         items: [
-            { name: 'Inicio', path: '/dashboard' }
-        ]
+            // CU16 ocultado del menú
+        ],
+        visibleForRoles: ['Administrador', 'Coordinador Académico']
     }
 ];
 
 function Sidebar({ isOpen, onClose }) {
-    const [openModules, setOpenModules] = useState([6]); // Dashboard abierto por defecto
+    const [openModules, setOpenModules] = useState([0, 1, 4]); // Dashboard, Planificación y Asistencia abiertos por defecto
     const location = useLocation();
+    const { isCoordinador, user } = useAuth();
 
     const toggleModule = (moduleId) => {
         setOpenModules(prev => 
@@ -95,6 +119,31 @@ function Sidebar({ isOpen, onClose }) {
     };
 
     const isActive = (path) => location.pathname === path;
+
+    // Determinar el rol actual
+    const userRole = user?.rol?.nombre || 'Usuario';
+
+    // Log temporal para debug
+    if (user) {
+        console.log('DEBUG Sidebar:', {
+            userFullName: user.nombre_persona,
+            userRole: userRole,
+            userRolObject: user.rol,
+            allUserData: user
+        });
+    }
+
+    // Filtrar módulos visibles según el rol
+    const canViewModule = (module) => {
+        if (module.visibleForRoles.includes('all')) return true;
+        return module.visibleForRoles.includes(userRole);
+    };
+
+    // Filtrar items del módulo según el rol
+    const canViewItem = (item) => {
+        if (!item.visibleForRoles) return true; // Si no especifica, mostrar a todos
+        return item.visibleForRoles.includes(userRole);
+    };
 
     return (
         <>
@@ -113,7 +162,7 @@ function Sidebar({ isOpen, onClose }) {
                 }`}
             >
                 <nav className="p-4 space-y-2">
-                    {menuModules.map((module) => (
+                    {menuModules.filter(canViewModule).map((module) => (
                         <div key={module.id} className="border-b border-gray-100 pb-2">
                             {/* Module Header */}
                             <button
@@ -143,18 +192,27 @@ function Sidebar({ isOpen, onClose }) {
                             {/* Module Items */}
                             {openModules.includes(module.id) && (
                                 <div className="mt-2 ml-8 space-y-1">
-                                    {module.items.map((item, index) => (
+                                    {module.items.filter(item => canViewItem(item)).map((item, index) => (
                                         <Link
                                             key={index}
                                             to={item.path}
                                             onClick={onClose}
-                                            className={`block px-4 py-2 rounded-lg text-sm transition duration-200 ${
+                                            className={`block px-4 py-2 rounded-lg text-sm transition duration-200 flex items-center space-x-2 ${
                                                 isActive(item.path)
                                                     ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold shadow-md'
                                                     : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
                                             }`}
                                         >
-                                            {item.name}
+                                            {item.cu && (
+                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                                                    isActive(item.path) 
+                                                        ? 'bg-white/20' 
+                                                        : 'bg-orange-100 text-orange-700'
+                                                }`}>
+                                                    {item.cu}
+                                                </span>
+                                            )}
+                                            <span>{item.name}</span>
                                         </Link>
                                     ))}
                                 </div>

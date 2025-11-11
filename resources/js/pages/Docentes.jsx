@@ -27,19 +27,25 @@ function Docentes() {
         }
     };
 
+    // Permitir crear/editar/eliminar solo si es Administrador o Coordinador Académico
+    const user = JSON.parse(localStorage.getItem('user'));
+    const isAdminOrCoord = user?.rol?.nombre === 'Administrador' || user?.rol?.nombre === 'Coordinador Académico';
+
     const handleCreate = () => {
+        if (!isAdminOrCoord) return;
         setEditingDocente(null);
         setShowModal(true);
     };
 
     const handleEdit = (docente) => {
+        if (!isAdminOrCoord) return;
         setEditingDocente(docente);
         setShowModal(true);
     };
 
     const handleDelete = async (id) => {
+        if (!isAdminOrCoord) return;
         if (!confirm('¿Está seguro de eliminar este docente?')) return;
-
         try {
             await api.delete(`/docentes/${id}`);
             alert('Docente eliminado exitosamente');
@@ -51,9 +57,10 @@ function Docentes() {
     };
 
     const handleToggleEstado = async (docente) => {
+        if (!isAdminOrCoord) return;
         try {
-            await api.patch(`/docentes/${docente.id_docente}`, {
-                estado: docente.estado === 'A' ? 'I' : 'A'
+            await api.patch(`/docentes/${docente.codigo_doc}`, {
+                estado: docente.usuario?.estado ? 'I' : 'A'
             });
             alert('Estado actualizado exitosamente');
             fetchDocentes();
@@ -64,9 +71,10 @@ function Docentes() {
     };
 
     const handleSave = async (data) => {
+        if (!isAdminOrCoord) return;
         try {
             if (editingDocente) {
-                await api.put(`/docentes/${editingDocente.id_docente}`, data);
+                await api.put(`/docentes/${editingDocente.codigo_doc}`, data);
                 alert('Docente actualizado exitosamente');
             } else {
                 await api.post('/docentes', data);
@@ -82,13 +90,21 @@ function Docentes() {
 
     const filteredDocentes = docentes.filter(docente => {
         const searchLower = searchTerm.toLowerCase();
+        const persona = docente.usuario?.persona;
         const matchesSearch = 
-            docente.persona?.ci?.toLowerCase().includes(searchLower) ||
-            docente.persona?.nombre?.toLowerCase().includes(searchLower) ||
-            docente.persona?.apellido_paterno?.toLowerCase().includes(searchLower) ||
-            docente.especialidad?.toLowerCase().includes(searchLower);
+            persona?.ci?.toLowerCase().includes(searchLower) ||
+            persona?.nombre?.toLowerCase().includes(searchLower) ||
+            persona?.apellido_paterno?.toLowerCase().includes(searchLower) ||
+            docente.titulo?.toLowerCase().includes(searchLower) ||
+            docente.codigo_doc?.toString().includes(searchLower);
         
-        const matchesEstado = filterEstado === '' || docente.estado === filterEstado;
+        // Filtro de estado: A = true (Activo), I = false (Inactivo)
+        let matchesEstado = true;
+        if (filterEstado === 'A') {
+            matchesEstado = docente.usuario?.estado === true;
+        } else if (filterEstado === 'I') {
+            matchesEstado = docente.usuario?.estado === false;
+        }
         
         return matchesSearch && matchesEstado;
     });
@@ -168,7 +184,7 @@ function Docentes() {
                 ) : (
                     filteredDocentes.map((docente) => (
                         <div
-                            key={docente.id_docente}
+                            key={docente.codigo_doc}
                             className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition duration-300 overflow-hidden border border-gray-100"
                         >
                             {/* Card Header */}
@@ -181,9 +197,10 @@ function Docentes() {
                                     </div>
                                     <div className="flex-1 text-white">
                                         <h3 className="font-bold text-lg">
-                                            {docente.persona?.nombre} {docente.persona?.apellido_paterno}
+                                            {docente.nombre_completo || `${docente.usuario?.persona?.nombre} ${docente.usuario?.persona?.apellido_paterno}`}
                                         </h3>
-                                        <p className="text-sm opacity-90">CI: {docente.persona?.ci}</p>
+                                        <p className="text-sm opacity-90">CI: {docente.usuario?.persona?.ci}</p>
+                                        <p className="text-sm opacity-90">Código: {docente.codigo_doc}</p>
                                     </div>
                                 </div>
                             </div>
@@ -196,7 +213,7 @@ function Docentes() {
                                     </svg>
                                     <div>
                                         <p className="text-xs text-gray-500">Especialidad</p>
-                                        <p className="text-sm font-semibold text-gray-800">{docente.especialidad || 'No especificada'}</p>
+                                        <p className="text-sm font-semibold text-gray-800">{docente.titulo || 'No especificada'}</p>
                                     </div>
                                 </div>
 
@@ -220,14 +237,14 @@ function Docentes() {
                                     </div>
                                 </div>
 
-                                {docente.persona?.telefono && (
+                                {docente.usuario?.persona?.telefono && (
                                     <div className="flex items-start space-x-2">
                                         <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                         </svg>
                                         <div>
                                             <p className="text-xs text-gray-500">Teléfono</p>
-                                            <p className="text-sm font-semibold text-gray-800">{docente.persona?.telefono}</p>
+                                            <p className="text-sm font-semibold text-gray-800">{docente.usuario?.persona?.telefono}</p>
                                         </div>
                                     </div>
                                 )}
@@ -236,12 +253,12 @@ function Docentes() {
                                     <button
                                         onClick={() => handleToggleEstado(docente)}
                                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                            docente.estado === 'A'
+                                            docente.usuario?.estado
                                                 ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                                 : 'bg-red-100 text-red-800 hover:bg-red-200'
                                         } transition duration-200`}
                                     >
-                                        {docente.estado === 'A' ? 'Activo' : 'Inactivo'}
+                                        {docente.usuario?.estado ? 'Activo' : 'Inactivo'}
                                     </button>
 
                                     <div className="flex space-x-2">
@@ -255,7 +272,7 @@ function Docentes() {
                                             </svg>
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(docente.id_docente)}
+                                            onClick={() => handleDelete(docente.codigo_doc)}
                                             className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-200"
                                             title="Eliminar"
                                         >

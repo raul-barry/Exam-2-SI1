@@ -14,17 +14,24 @@ class InfraestructuraController extends Controller
      */
     public function index(Request $request)
     {
-        $infraestructuras = Infraestructura::with('aulas')
-            ->when($request->search, function ($query, $search) {
-                $query->where('nombre_infr', 'ILIKE', "%{$search}%")
-                      ->orWhere('ubicacion', 'ILIKE', "%{$search}%");
-            })
-            ->when($request->estado, function ($query, $estado) {
-                $query->where('estado', $estado);
-            })
-            ->paginate($request->per_page ?? 15);
+        try {
+            $infraestructuras = Infraestructura::with('aulas')
+                ->when($request->search, function ($query, $search) {
+                    $query->where('nombre_infr', 'ILIKE', "%{$search}%")
+                          ->orWhere('ubicacion', 'ILIKE', "%{$search}%");
+                })
+                ->when($request->estado, function ($query, $estado) {
+                    $query->where('estado', $estado);
+                })
+                ->paginate($request->per_page ?? 15);
 
-        return response()->json($infraestructuras);
+            return response()->json($infraestructuras);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error al cargar infraestructuras',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -38,14 +45,25 @@ class InfraestructuraController extends Controller
             'estado' => 'nullable|string|max:30',
         ]);
 
-        $infraestructura = Infraestructura::create($request->all());
+        try {
+            $infraestructura = Infraestructura::create([
+                'nombre_infr' => $request->nombre_infr,
+                'ubicacion' => $request->ubicacion,
+                'estado' => $request->estado,
+            ]);
 
-        Bitacora::registrar('Gestión de Infraestructura', "Infraestructura creada: {$infraestructura->nombre_infr}");
+            Bitacora::registrar('Gestión de Infraestructura', "Infraestructura creada: {$infraestructura->nombre_infr}");
 
-        return response()->json([
-            'message' => 'Infraestructura creada exitosamente',
-            'infraestructura' => $infraestructura,
-        ], 201);
+            return response()->json([
+                'message' => 'Infraestructura creada exitosamente',
+                'infraestructura' => $infraestructura,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error al crear infraestructura',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -72,14 +90,25 @@ class InfraestructuraController extends Controller
             'estado' => 'nullable|string|max:30',
         ]);
 
-        $infraestructura->update($request->all());
+        try {
+            $infraestructura->update([
+                'nombre_infr' => $request->nombre_infr ?? $infraestructura->nombre_infr,
+                'ubicacion' => $request->ubicacion,
+                'estado' => $request->estado,
+            ]);
 
-        Bitacora::registrar('Gestión de Infraestructura', "Infraestructura actualizada: {$infraestructura->nombre_infr}");
+            Bitacora::registrar('Gestión de Infraestructura', "Infraestructura actualizada: {$infraestructura->nombre_infr}");
 
-        return response()->json([
-            'message' => 'Infraestructura actualizada exitosamente',
-            'infraestructura' => $infraestructura,
-        ]);
+            return response()->json([
+                'message' => 'Infraestructura actualizada exitosamente',
+                'infraestructura' => $infraestructura,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error al actualizar infraestructura',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

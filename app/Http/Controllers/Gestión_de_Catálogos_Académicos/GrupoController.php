@@ -14,6 +14,18 @@ class GrupoController extends Controller
      */
     public function index(Request $request)
     {
+        // Log para debug: quién hace la petición a /grupos
+        try {
+            $usuario = auth('sanctum')->user();
+            \Log::info('API /grupos called', [
+                'ci' => $usuario ? $usuario->ci_persona : null,
+                'rol' => $usuario && $usuario->rol ? $usuario->rol->nombre : null,
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning('No se pudo obtener usuario en /grupos: ' . $e->getMessage());
+        }
+
+        // Sin filtro por rol, devolver todos los grupos para cualquier usuario autenticado
         $grupos = Grupo::with(['materia', 'asignaciones'])
             ->when($request->search, function ($query, $search) {
                 $query->where('codigo_grupo', 'ILIKE', "%{$search}%");
@@ -21,7 +33,21 @@ class GrupoController extends Controller
             ->when($request->codigo_mat, function ($query, $codigoMat) {
                 $query->where('codigo_mat', $codigoMat);
             })
-            ->paginate($request->per_page ?? 15);
+            ->paginate($request->per_page ?? 1000); // Aumentar el límite para combos
+
+        // Transformar para asegurar que materia está siempre disponible
+        $grupos->getCollection()->transform(function ($grupo) {
+            return [
+                'codigo_grupo' => $grupo->codigo_grupo,
+                'codigo_mat' => $grupo->codigo_mat,
+                'capacidad_de_grupo' => $grupo->capacidad_de_grupo,
+                'materia' => $grupo->materia ? [
+                    'codigo_mat' => $grupo->materia->codigo_mat,
+                    'nombre_mat' => $grupo->materia->nombre_mat,
+                ] : null,
+                'asignaciones' => $grupo->asignaciones,
+            ];
+        });
 
         return response()->json($grupos);
     }

@@ -7,11 +7,9 @@ function UsuarioForm({ usuario, roles, onClose, onSave }) {
         contrasena: '',
         confirmar_contrasena: '',
         id_rol: '',
-        estado: 'A',
+        estado: true, // true = Activo, false = Inactivo
         // Datos de persona
-        nombre: '',
-        apellido_paterno: '',
-        apellido_materno: '',
+        nombre_completo: '',
         fecha_nacimiento: '',
         sexo: 'M',
         telefono: '',
@@ -23,19 +21,25 @@ function UsuarioForm({ usuario, roles, onClose, onSave }) {
 
     useEffect(() => {
         if (usuario) {
+            // Convertir estado a booleano si viene de la BD
+            const estadoValue = typeof usuario.estado === 'string' 
+                ? usuario.estado === 'A' 
+                : usuario.estado !== false; // true si no es false
+            
+            // Obtener nombre completo del campo nombre en persona
+            const nombreCompleto = usuario.persona?.nombre || '';
+            
             setFormData({
-                ci: usuario.ci || '',
+                ci: usuario.ci_persona || usuario.ci || '',
                 contrasena: '',
                 confirmar_contrasena: '',
                 id_rol: usuario.id_rol || '',
-                estado: usuario.estado || 'A',
-                nombre: usuario.persona?.nombre || '',
-                apellido_paterno: usuario.persona?.apellido_paterno || '',
-                apellido_materno: usuario.persona?.apellido_materno || '',
+                estado: estadoValue, // true = Activo, false = Inactivo
+                nombre_completo: nombreCompleto,
                 fecha_nacimiento: usuario.persona?.fecha_nacimiento || '',
                 sexo: usuario.persona?.sexo || 'M',
                 telefono: usuario.persona?.telefono || '',
-                email: usuario.persona?.email || '',
+                email: usuario.email || usuario.persona?.email || '',
                 direccion: usuario.persona?.direccion || ''
             });
         }
@@ -52,14 +56,14 @@ function UsuarioForm({ usuario, roles, onClose, onSave }) {
     const validateForm = () => {
         const newErrors = {};
 
-        if (!formData.ci.trim()) newErrors.ci = 'El CI es requerido';
+        // CI solo es requerido si es creación (nuevo usuario)
+        if (!usuario && !formData.ci.trim()) newErrors.ci = 'El CI es requerido';
         if (!usuario && !formData.contrasena) newErrors.contrasena = 'La contraseña es requerida';
         if (formData.contrasena && formData.contrasena !== formData.confirmar_contrasena) {
             newErrors.confirmar_contrasena = 'Las contraseñas no coinciden';
         }
         if (!formData.id_rol) newErrors.id_rol = 'El rol es requerido';
-        if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
-        if (!formData.apellido_paterno.trim()) newErrors.apellido_paterno = 'El apellido paterno es requerido';
+        if (!formData.nombre_completo.trim()) newErrors.nombre_completo = 'El nombre completo es requerido';
         if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             newErrors.email = 'Email inválido';
         }
@@ -190,12 +194,12 @@ function UsuarioForm({ usuario, roles, onClose, onSave }) {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                                 <select
                                     name="estado"
-                                    value={formData.estado}
-                                    onChange={handleChange}
+                                    value={formData.estado ? 'true' : 'false'}
+                                    onChange={(e) => handleChange({ target: { name: 'estado', value: e.target.value === 'true' } })}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                                 >
-                                    <option value="A">Activo</option>
-                                    <option value="I">Inactivo</option>
+                                    <option value="true">Activo</option>
+                                    <option value="false">Inactivo</option>
                                 </select>
                             </div>
                         </div>
@@ -210,43 +214,18 @@ function UsuarioForm({ usuario, roles, onClose, onSave }) {
                             Datos Personales
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
+                            <div className="md:col-span-1">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Nombre <span className="text-red-500">*</span>
+                                    Nombre Completo <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
-                                    name="nombre"
-                                    value={formData.nombre}
+                                    name="nombre_completo"
+                                    value={formData.nombre_completo}
                                     onChange={handleChange}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 ${errors.nombre ? 'border-red-500' : 'border-gray-300'}`}
+                                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 ${errors.nombre_completo ? 'border-red-500' : 'border-gray-300'}`}
                                 />
-                                {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Apellido Paterno <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="apellido_paterno"
-                                    value={formData.apellido_paterno}
-                                    onChange={handleChange}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 ${errors.apellido_paterno ? 'border-red-500' : 'border-gray-300'}`}
-                                />
-                                {errors.apellido_paterno && <p className="text-red-500 text-xs mt-1">{errors.apellido_paterno}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Apellido Materno</label>
-                                <input
-                                    type="text"
-                                    name="apellido_materno"
-                                    value={formData.apellido_materno}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                                />
+                                {errors.nombre_completo && <p className="text-red-500 text-xs mt-1">{errors.nombre_completo}</p>}
                             </div>
 
                             <div>

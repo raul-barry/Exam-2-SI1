@@ -9,22 +9,24 @@ class Permiso extends Model
 {
     use HasFactory;
 
-    protected $table = 'permisos';
+    protected $table = 'carga_horaria.permiso';
     protected $primaryKey = 'id_permiso';
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'nombre',
+        'descripcion',
+        'modulo',
     ];
 
     /**
-     * Relación: Un permiso puede pertenecer a muchos roles (N:M)
+     * Relación: Un permiso pertenece a muchos roles
      */
     public function roles()
     {
         return $this->belongsToMany(
             Rol::class,
-            'rol_permisos',
+            'carga_horaria.rol_permiso',
             'id_permiso',
             'id_rol'
         );

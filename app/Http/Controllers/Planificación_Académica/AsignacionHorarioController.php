@@ -12,6 +12,19 @@ use Illuminate\Support\Facades\DB;
 class AsignacionHorarioController extends Controller
 {
     /**
+     * Obtener todos los periodos académicos únicos registrados en asignaciones de carga horaria
+     * GET /api/periodos-academicos
+     */
+    public function periodosAcademicos()
+    {
+        $periodos = \App\Models\AsignacionHorario::query()
+            ->select('periodo_academico')
+            ->distinct()
+            ->orderBy('periodo_academico', 'desc')
+            ->pluck('periodo_academico');
+        return response()->json(['data' => $periodos]);
+    }
+    /**
      * Listar asignaciones de horario
      */
     public function index(Request $request)
@@ -34,7 +47,93 @@ class AsignacionHorarioController extends Controller
         ->orderBy('periodo_academico', 'desc')
         ->paginate($request->per_page ?? 15);
 
-        return response()->json($asignaciones);
+        // Transformar los datos para incluir las relaciones en la respuesta JSON
+        $data = $asignaciones->map(function ($asignacion) {
+            // Obtener nombre del docente (Nombre + Apellido Paterno + Apellido Materno)
+            $nombreDocente = 'Desconocido';
+            if ($asignacion->docente && $asignacion->docente->usuario && $asignacion->docente->usuario->persona) {
+                $persona = $asignacion->docente->usuario->persona;
+                $nombre = trim($persona->nombre ?? '');
+                $apellidoPaterno = trim($persona->apellido_paterno ?? '');
+                $apellidoMaterno = trim($persona->apellido_materno ?? '');
+                
+                // Construir: Nombre Apellido_Paterno Apellido_Materno
+                $parts = array_filter([$nombre, $apellidoPaterno, $apellidoMaterno]);
+                $nombreDocente = !empty($parts) ? implode(' ', $parts) : 'Desconocido';
+            }
+
+            return [
+                'id_asignacion' => $asignacion->id_asignacion,
+                'periodo_academico' => $asignacion->periodo_academico,
+                'estado' => $asignacion->estado,
+                'codigo_doc' => $asignacion->codigo_doc,
+                'codigo_grupo' => $asignacion->codigo_grupo,
+                'nro_aula' => $asignacion->nro_aula,
+                'id_horario' => $asignacion->id_horario,
+                'docente' => $asignacion->docente ? [
+                    'codigo_doc' => $asignacion->docente->codigo_doc,
+                    'titulo' => $asignacion->docente->titulo,
+                    'correo_institucional' => $asignacion->docente->correo_institucional,
+                    'carga_horaria_max' => $asignacion->docente->carga_horaria_max,
+                    'id_usuario' => $asignacion->docente->id_usuario,
+                    'nombre_docente' => $nombreDocente,  // Campo adicional para facilitar acceso
+                    'usuario' => $asignacion->docente->usuario ? [
+                        'id_usuario' => $asignacion->docente->usuario->id_usuario,
+                        'estado' => $asignacion->docente->usuario->estado,
+                        'ci_persona' => $asignacion->docente->usuario->ci_persona,
+                        'id_rol' => $asignacion->docente->usuario->id_rol,
+                        'persona' => $asignacion->docente->usuario->persona ? [
+                            'ci' => $asignacion->docente->usuario->persona->ci,
+                            'nombre_completo' => $asignacion->docente->usuario->persona->nombre_completo,
+                            'apellido' => $asignacion->docente->usuario->persona->apellido,
+                            'nombre' => $asignacion->docente->usuario->persona->nombre,
+                        ] : null,
+                    ] : null,
+                ] : null,
+                'grupo' => $asignacion->grupo ? [
+                    'codigo_grupo' => $asignacion->grupo->codigo_grupo,
+                    'capacidad_de_grupo' => $asignacion->grupo->capacidad_de_grupo,
+                    'codigo_mat' => $asignacion->grupo->codigo_mat,
+                    'materia' => $asignacion->grupo->materia ? [
+                        'codigo_mat' => $asignacion->grupo->materia->codigo_mat,
+                        'nombre_mat' => $asignacion->grupo->materia->nombre_mat,
+                        'nivel' => $asignacion->grupo->materia->nivel,
+                        'horas_semanales' => $asignacion->grupo->materia->horas_semanales,
+                        'tipo' => $asignacion->grupo->materia->tipo,
+                    ] : null,
+                ] : null,
+                'aula' => $asignacion->aula ? [
+                    'nro_aula' => $asignacion->aula->nro_aula,
+                    'capacidad' => $asignacion->aula->capacidad,
+                    'id_infraestructura' => $asignacion->aula->id_infraestructura,
+                ] : null,
+                'horario' => $asignacion->horario ? [
+                    'id_horario' => $asignacion->horario->id_horario,
+                    'dias_semana' => $asignacion->horario->dias_semana,
+                    'hora_inicio' => $asignacion->horario->hora_inicio ? $asignacion->horario->hora_inicio->format('H:i') : null,
+                    'hora_fin' => $asignacion->horario->hora_fin ? $asignacion->horario->hora_fin->format('H:i') : null,
+                    'turno' => $asignacion->horario->turno,
+                ] : null,
+            ];
+        });
+
+        return response()->json([
+            'data' => $data,
+            'meta' => [
+                'current_page' => $asignaciones->currentPage(),
+                'from' => $asignaciones->firstItem(),
+                'last_page' => $asignaciones->lastPage(),
+                'per_page' => $asignaciones->perPage(),
+                'to' => $asignaciones->lastItem(),
+                'total' => $asignaciones->total(),
+            ],
+            'links' => [
+                'first' => $asignaciones->url(1),
+                'last' => $asignaciones->url($asignaciones->lastPage()),
+                'prev' => $asignaciones->previousPageUrl(),
+                'next' => $asignaciones->nextPageUrl(),
+            ],
+        ]);
     }
 
     /**

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Usuario;
 use App\Models\Persona;
 use App\Models\Bitacora;
+use App\Models\Docente;
+use App\Models\Rol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +41,7 @@ class UsuarioController extends Controller
     {
         $request->validate([
             'ci' => 'required|string|max:20|unique:persona,ci',
-            'nombre' => 'required|string|max:100',
+            'nombre_completo' => 'required|string|max:200',
             'telefono' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:100',
             'direccion' => 'nullable|string|max:150',
@@ -49,10 +51,12 @@ class UsuarioController extends Controller
 
         DB::beginTransaction();
         try {
-            // Crear persona
+            // Crear persona con nombre completo
             $persona = Persona::create([
                 'ci' => $request->ci,
-                'nombre' => $request->nombre,
+                'nombre' => $request->nombre_completo,
+                'apellido_paterno' => '',
+                'apellido_materno' => '',
                 'telefono' => $request->telefono,
                 'email' => $request->email,
                 'direccion' => $request->direccion,
@@ -65,6 +69,16 @@ class UsuarioController extends Controller
                 'ci_persona' => $persona->ci,
                 'id_rol' => $request->id_rol,
             ]);
+
+            // Si el rol es Docente (id_rol = 5), crear registro en tabla docente
+            if ($request->id_rol == 5) {
+                Docente::create([
+                    'id_usuario' => $usuario->id_usuario,
+                    'titulo' => 'Docente',
+                    'correo_institucional' => $request->email,
+                    'carga_horaria_max' => 40,
+                ]);
+            }
 
             // Registrar en bitácora
             Bitacora::registrar('Gestión de Usuarios', "Usuario creado: {$persona->nombre}");
@@ -104,7 +118,7 @@ class UsuarioController extends Controller
         $usuario = Usuario::findOrFail($id);
 
         $request->validate([
-            'nombre' => 'sometimes|string|max:100',
+            'nombre_completo' => 'sometimes|string|max:200',
             'telefono' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:100',
             'direccion' => 'nullable|string|max:150',
@@ -114,13 +128,55 @@ class UsuarioController extends Controller
 
         DB::beginTransaction();
         try {
-            // Actualizar persona
-            if ($request->hasAny(['nombre', 'telefono', 'email', 'direccion'])) {
-                $usuario->persona->update($request->only(['nombre', 'telefono', 'email', 'direccion']));
+            // Actualizar persona con nombre completo
+            $personaData = [];
+            
+            // Siempre actualizar nombre_completo si viene
+            if ($request->has('nombre_completo')) {
+                $personaData['nombre'] = $request->nombre_completo;
+                // Limpiar apellidos cuando se usa nombre completo
+                $personaData['apellido_paterno'] = '';
+                $personaData['apellido_materno'] = '';
+            }
+            
+            // Actualizar otros campos
+            if ($request->has('telefono')) {
+                $personaData['telefono'] = $request->telefono;
+            }
+            if ($request->has('email')) {
+                $personaData['email'] = $request->email;
+            }
+            if ($request->has('direccion')) {
+                $personaData['direccion'] = $request->direccion;
+            }
+            
+            if (!empty($personaData)) {
+                $usuario->persona->update($personaData);
             }
 
             // Actualizar usuario
-            $usuario->update($request->only(['id_rol', 'estado']));
+            if ($request->has('id_rol')) {
+                $usuario->id_rol = $request->id_rol;
+            }
+            if ($request->has('estado')) {
+                $usuario->estado = $request->estado;
+            }
+            $usuario->save();
+
+            // Si el rol cambió a Docente (id_rol = 5) y no existe docente aún, crearlo
+            if ($request->has('id_rol') && $request->id_rol == 5 && !$usuario->docente) {
+                Docente::create([
+                    'id_usuario' => $usuario->id_usuario,
+                    'titulo' => 'Docente',
+                    'correo_institucional' => $usuario->persona->email,
+                    'carga_horaria_max' => 40,
+                ]);
+            }
+
+            // Si el rol cambió a algo distinto de Docente y existe docente, eliminarlo
+            if ($request->has('id_rol') && $request->id_rol != 5 && $usuario->docente) {
+                $usuario->docente->delete();
+            }
 
             // Registrar en bitácora
             Bitacora::registrar('Gestión de Usuarios', "Usuario actualizado: {$usuario->persona->nombre}");
@@ -151,8 +207,14 @@ class UsuarioController extends Controller
 
         DB::beginTransaction();
         try {
-            // Al eliminar el usuario, se elimina en cascada la persona
-            $usuario->delete();
+            // Si el usuario es un docente, eliminar el registro de docente primero
+            if ($usuario->docente) {
+                $usuario->docente->delete();
+            }
+            
+            // Eliminar el usuario - La cascada de la BD eliminará automáticamente la persona
+            // porque la restricción usuario_ci_persona_foreign está configurada con ON DELETE CASCADE
+            DB::statement('DELETE FROM carga_horaria.usuario WHERE id_usuario = ?', [$id]);
 
             // Registrar en bitácora
             Bitacora::registrar('Gestión de Usuarios', "Usuario eliminado: {$nombrePersona}");

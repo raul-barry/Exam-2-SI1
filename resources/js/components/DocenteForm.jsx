@@ -4,9 +4,7 @@ function DocenteForm({ docente, onClose, onSave }) {
     const [formData, setFormData] = useState({
         // Datos de persona
         ci: '',
-        nombre: '',
-        apellido_paterno: '',
-        apellido_materno: '',
+        nombre_completo: '',
         fecha_nacimiento: '',
         sexo: 'M',
         telefono: '',
@@ -24,9 +22,7 @@ function DocenteForm({ docente, onClose, onSave }) {
         if (docente) {
             setFormData({
                 ci: docente.persona?.ci || '',
-                nombre: docente.persona?.nombre || '',
-                apellido_paterno: docente.persona?.apellido_paterno || '',
-                apellido_materno: docente.persona?.apellido_materno || '',
+                nombre_completo: docente.persona?.nombre || '',
                 fecha_nacimiento: docente.persona?.fecha_nacimiento || '',
                 sexo: docente.persona?.sexo || 'M',
                 telefono: docente.persona?.telefono || '',
@@ -50,9 +46,9 @@ function DocenteForm({ docente, onClose, onSave }) {
     const validateForm = () => {
         const newErrors = {};
 
-        if (!formData.ci.trim()) newErrors.ci = 'El CI es requerido';
-        if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
-        if (!formData.apellido_paterno.trim()) newErrors.apellido_paterno = 'El apellido paterno es requerido';
+        // Solo validar CI si es un docente nuevo
+        if (!docente && !formData.ci.trim()) newErrors.ci = 'El CI es requerido';
+        if (!formData.nombre_completo.trim()) newErrors.nombre_completo = 'El nombre completo es requerido';
         if (!formData.especialidad.trim()) newErrors.especialidad = 'La especialidad es requerida';
         if (formData.carga_horaria_max <= 0) newErrors.carga_horaria_max = 'La carga horaria debe ser mayor a 0';
         if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -114,58 +110,34 @@ function DocenteForm({ docente, onClose, onSave }) {
                             Datos Personales
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    CI <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="ci"
-                                    value={formData.ci}
-                                    onChange={handleChange}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 ${errors.ci ? 'border-red-500' : 'border-gray-300'}`}
-                                    disabled={!!docente}
-                                />
-                                {errors.ci && <p className="text-red-500 text-xs mt-1">{errors.ci}</p>}
-                            </div>
+                            {!docente && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        CI <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="ci"
+                                        value={formData.ci}
+                                        onChange={handleChange}
+                                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 ${errors.ci ? 'border-red-500' : 'border-gray-300'}`}
+                                    />
+                                    {errors.ci && <p className="text-red-500 text-xs mt-1">{errors.ci}</p>}
+                                </div>
+                            )}
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Nombre <span className="text-red-500">*</span>
+                                    Nombre Completo <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
-                                    name="nombre"
-                                    value={formData.nombre}
+                                    name="nombre_completo"
+                                    value={formData.nombre_completo}
                                     onChange={handleChange}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 ${errors.nombre ? 'border-red-500' : 'border-gray-300'}`}
+                                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 ${errors.nombre_completo ? 'border-red-500' : 'border-gray-300'}`}
                                 />
-                                {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Apellido Paterno <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="apellido_paterno"
-                                    value={formData.apellido_paterno}
-                                    onChange={handleChange}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 ${errors.apellido_paterno ? 'border-red-500' : 'border-gray-300'}`}
-                                />
-                                {errors.apellido_paterno && <p className="text-red-500 text-xs mt-1">{errors.apellido_paterno}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Apellido Materno</label>
-                                <input
-                                    type="text"
-                                    name="apellido_materno"
-                                    value={formData.apellido_materno}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                                />
+                                {errors.nombre_completo && <p className="text-red-500 text-xs mt-1">{errors.nombre_completo}</p>}
                             </div>
 
                             <div>

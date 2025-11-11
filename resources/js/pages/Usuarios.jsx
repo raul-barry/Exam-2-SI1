@@ -2,6 +2,23 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import UsuarioForm from '../components/UsuarioForm';
 
+// Función helper para obtener nombre completo
+const getNombreCompleto = (usuario) => {
+    if (usuario.nombre_completo && usuario.nombre_completo.trim()) {
+        return usuario.nombre_completo;
+    }
+    
+    const nombre = usuario.persona?.nombre || '';
+    const apellidoPaterno = usuario.persona?.apellido_paterno || '';
+    const apellidoMaterno = usuario.persona?.apellido_materno || '';
+    
+    const nombreCompleto = [nombre, apellidoPaterno, apellidoMaterno]
+        .filter(part => part && part.trim())
+        .join(' ');
+    
+    return nombreCompleto || 'Sin nombre';
+};
+
 function Usuarios() {
     const [usuarios, setUsuarios] = useState([]);
     const [roles, setRoles] = useState([]);
@@ -10,13 +27,18 @@ function Usuarios() {
     const [editingUsuario, setEditingUsuario] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterRol, setFilterRol] = useState('');
+    const [filterEstado, setFilterEstado] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
     useEffect(() => {
+        setCurrentPage(1); // Resetear a página 1 cuando cambian los filtros
+    }, [filterRol, filterEstado]);
+
+    useEffect(() => {
         fetchUsuarios();
         fetchRoles();
-    }, [currentPage, filterRol]);
+    }, [currentPage, filterRol, filterEstado]);
 
     const fetchUsuarios = async () => {
         try {
@@ -70,8 +92,13 @@ function Usuarios() {
 
     const handleToggleEstado = async (usuario) => {
         try {
+            // Convertir estado a booleano si viene como string
+            const estadoActual = typeof usuario.estado === 'string' 
+                ? usuario.estado === 'A' 
+                : usuario.estado !== false;
+            
             await api.patch(`/usuarios/${usuario.id_usuario}`, {
-                estado: usuario.estado === 'A' ? 'I' : 'A'
+                estado: !estadoActual  // true = Activo, false = Inactivo
             });
             alert('Estado actualizado exitosamente');
             fetchUsuarios();
@@ -100,11 +127,28 @@ function Usuarios() {
 
     const filteredUsuarios = usuarios.filter(usuario => {
         const searchLower = searchTerm.toLowerCase();
-        return (
+        const matchesSearch = 
+            usuario.ci_persona?.toLowerCase().includes(searchLower) ||
             usuario.ci?.toLowerCase().includes(searchLower) ||
+            usuario.nombre_completo?.toLowerCase().includes(searchLower) ||
             usuario.persona?.nombre?.toLowerCase().includes(searchLower) ||
-            usuario.persona?.apellido_paterno?.toLowerCase().includes(searchLower)
-        );
+            usuario.persona?.apellido_paterno?.toLowerCase().includes(searchLower);
+        
+        // Filtro de rol
+        let matchesRol = true;
+        if (filterRol) {
+            matchesRol = usuario.id_rol === parseInt(filterRol);
+        }
+        
+        // Filtro de estado
+        let matchesEstado = true;
+        if (filterEstado === 'A') {
+            matchesEstado = usuario.estado === true;
+        } else if (filterEstado === 'I') {
+            matchesEstado = usuario.estado === false;
+        }
+        
+        return matchesSearch && matchesRol && matchesEstado;
     });
 
     return (
@@ -135,7 +179,7 @@ function Usuarios() {
 
             {/* Filters */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
                         <div className="relative">
@@ -164,6 +208,18 @@ function Usuarios() {
                             ))}
                         </select>
                     </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Filtrar por Estado</label>
+                        <select
+                            value={filterEstado}
+                            onChange={(e) => setFilterEstado(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        >
+                            <option value="">Todos los estados</option>
+                            <option value="A">Activos</option>
+                            <option value="I">Inactivos</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -179,11 +235,11 @@ function Usuarios() {
                             <table className="w-full">
                                 <thead className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
                                     <tr>
+                                        <th className="px-6 py-4 text-left text-sm font-semibold">ID</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold">CI</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold">Nombre Completo</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold">Rol</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold">Estado</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold">Fecha Registro</th>
                                         <th className="px-6 py-4 text-center text-sm font-semibold">Acciones</th>
                                     </tr>
                                 </thead>
@@ -197,9 +253,10 @@ function Usuarios() {
                                     ) : (
                                         filteredUsuarios.map((usuario, index) => (
                                             <tr key={usuario.id_usuario} className={`hover:bg-orange-50 transition duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                                <td className="px-6 py-4 text-sm font-medium text-gray-900">{usuario.ci}</td>
+                                                <td className="px-6 py-4 text-sm font-semibold text-gray-600">{usuario.id_usuario}</td>
+                                                <td className="px-6 py-4 text-sm font-medium text-gray-900">{usuario.ci_persona || usuario.ci || '-'}</td>
                                                 <td className="px-6 py-4 text-sm text-gray-900">
-                                                    {usuario.persona?.nombre} {usuario.persona?.apellido_paterno} {usuario.persona?.apellido_materno}
+                                                    {getNombreCompleto(usuario)}
                                                 </td>
                                                 <td className="px-6 py-4 text-sm">
                                                     <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
@@ -210,16 +267,13 @@ function Usuarios() {
                                                     <button
                                                         onClick={() => handleToggleEstado(usuario)}
                                                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                            usuario.estado === 'A' 
+                                                            usuario.estado === true || usuario.estado === 'A' || usuario.estado === 'Activo'
                                                                 ? 'bg-green-100 text-green-800 hover:bg-green-200' 
                                                                 : 'bg-red-100 text-red-800 hover:bg-red-200'
                                                         } transition duration-200`}
                                                     >
-                                                        {usuario.estado === 'A' ? 'Activo' : 'Inactivo'}
+                                                        {usuario.estado === true || usuario.estado === 'A' || usuario.estado === 'Activo' ? 'Activo' : 'Inactivo'}
                                                     </button>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-gray-600">
-                                                    {new Date(usuario.fecha_registro).toLocaleDateString()}
                                                 </td>
                                                 <td className="px-6 py-4 text-sm">
                                                     <div className="flex justify-center space-x-2">

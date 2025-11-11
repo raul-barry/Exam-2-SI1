@@ -73,7 +73,14 @@ class AsistenciaController extends Controller
         ]);
 
         $asignacion = AsignacionHorario::with('docente.usuario.persona')->find($request->id_asignacion);
-        Bitacora::registrar('Asistencia Docente', "Asistencia registrada para: {$asignacion->docente->persona->nombre}");
+        Bitacora::registrar(
+            'Asistencia_Docente',
+            'REGISTRAR_ASISTENCIA',
+            auth('sanctum')->id(),
+            ['docente' => $asignacion->docente->persona->nombre],
+            'asistencias',
+            $asistencia->id_asistencias
+        );
 
         return response()->json([
             'message' => 'Asistencia registrada exitosamente',
@@ -110,7 +117,14 @@ class AsistenciaController extends Controller
 
         $asistencia->update($request->only(['tipo_registro', 'estado']));
 
-        Bitacora::registrar('Asistencia Docente', "Asistencia actualizada: ID {$asistencia->id_asistencias}");
+        Bitacora::registrar(
+            'Asistencia_Docente',
+            'ACTUALIZAR_ASISTENCIA',
+            auth('sanctum')->id(),
+            ['id_asistencias' => $id],
+            'asistencias',
+            $id
+        );
 
         return response()->json([
             'message' => 'Asistencia actualizada exitosamente',
@@ -126,7 +140,14 @@ class AsistenciaController extends Controller
         $asistencia = Asistencia::findOrFail($id);
         $asistencia->delete();
 
-        Bitacora::registrar('Asistencia Docente', "Asistencia eliminada: ID {$id}");
+        Bitacora::registrar(
+            'Asistencia_Docente',
+            'ELIMINAR_ASISTENCIA',
+            auth('sanctum')->id(),
+            ['id_asistencias' => $id],
+            'asistencias',
+            $id
+        );
 
         return response()->json([
             'message' => 'Asistencia eliminada exitosamente',

@@ -14,6 +14,18 @@ class AulaController extends Controller
      */
     public function index(Request $request)
     {
+        // Log para debug: quién hace la petición a /aulas
+        try {
+            $usuario = auth('sanctum')->user();
+            \Log::info('API /aulas called', [
+                'ci' => $usuario ? $usuario->ci_persona : null,
+                'rol' => $usuario && $usuario->rol ? $usuario->rol->nombre : null,
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning('No se pudo obtener usuario en /aulas: ' . $e->getMessage());
+        }
+
+        // Sin filtro por rol, devolver todas las aulas para cualquier usuario autenticado
         $aulas = Aula::with('infraestructura')
             ->when($request->search, function ($query, $search) {
                 $query->where('nro_aula', 'ILIKE', "%{$search}%");
@@ -27,7 +39,7 @@ class AulaController extends Controller
             ->when($request->id_infraestructura, function ($query, $id) {
                 $query->where('id_infraestructura', $id);
             })
-            ->paginate($request->per_page ?? 15);
+            ->paginate($request->per_page ?? 1000); // Aumentar el límite para combos
 
         return response()->json($aulas);
     }

@@ -14,14 +14,23 @@ class UsuarioSeeder extends Seeder
      */
     public function run(): void
     {
+        // Crear los roles
+        $roles = [
+            ['nombre' => 'Administrador', 'descripcion' => 'Rol de administrador del sistema'],
+            ['nombre' => 'Coordinador Academico', 'descripcion' => 'Coordinador Académico'],
+            ['nombre' => 'Docente', 'descripcion' => 'Docente'],
+        ];
 
-        // Crear el rol solo si no existe
-        $rolId = DB::table('rol')->where('nombre', 'Administrador')->value('id_rol');
-        if (!$rolId) {
-            $rolId = DB::table('rol')->insertGetId([
-                'nombre' => 'Administrador',
-                'descripcion' => 'Rol de administrador del sistema'
-            ], 'id_rol');
+        $roleIds = [];
+        foreach ($roles as $rol) {
+            $rolId = DB::table('rol')->where('nombre', $rol['nombre'])->value('id_rol');
+            if (!$rolId) {
+                $rolId = DB::table('rol')->insertGetId([
+                    'nombre' => $rol['nombre'],
+                    'descripcion' => $rol['descripcion']
+                ], 'id_rol');
+            }
+            $roleIds[$rol['nombre']] = $rolId;
         }
 
         // Eliminar usuarios y personas duplicadas
@@ -40,7 +49,7 @@ class UsuarioSeeder extends Seeder
         // Crear el usuario admin
         DB::table('usuario')->insert([
             'ci_persona' => '12345678',
-            'id_rol' => $rolId,
+            'id_rol' => $roleIds['Administrador'],
             'contrasena' => Hash::make('12345678'),
             'estado' => true
         ]);
@@ -57,7 +66,7 @@ class UsuarioSeeder extends Seeder
         // Crear el usuario superadmin
         DB::table('usuario')->insert([
             'ci_persona' => 'superadmin',
-            'id_rol' => $rolId,
+            'id_rol' => $roleIds['Administrador'],
             'contrasena' => Hash::make('superadmin'),
             'estado' => true
         ]);

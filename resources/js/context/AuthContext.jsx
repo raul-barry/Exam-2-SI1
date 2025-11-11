@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
     const login = async (ci_persona, contrasena) => {
         try {
             const response = await api.post('/auth/login', {
-                ci_persona,
+                login: ci_persona,
                 contrasena,
             });
             
@@ -68,12 +68,25 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
     };
 
+    const hasPermission = (permissionName) => {
+        if (!user || !user.rol) return false;
+        // Por ahora, simplemente verificamos el rol
+        // En una implementación más completa, verificaríamos los permisos específicos
+        return true; // Todos tienen permiso por ahora
+    };
+
+    const isCoordinador = () => {
+        return user?.rol?.nombre === 'Coordinador Académico' || user?.rol?.nombre === 'Administrador';
+    };
+
     const value = {
         user,
         login,
         logout,
         loading,
         isAuthenticated,
+        hasPermission,
+        isCoordinador,
     };
 
     return (

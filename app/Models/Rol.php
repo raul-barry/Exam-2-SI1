@@ -9,7 +9,7 @@ class Rol extends Model
 {
     use HasFactory;
 
-    protected $table = 'rol';
+    protected $table = 'carga_horaria.rol';
     protected $primaryKey = 'id_rol';
     public $timestamps = false;
 
@@ -33,9 +33,24 @@ class Rol extends Model
     {
         return $this->belongsToMany(
             Permiso::class,
-            'rol_permisos',
+            'carga_horaria.rol_permiso',
+            'id_rol',
+            'id_permiso',
             'id_rol',
             'id_permiso'
         );
+    }
+
+    /**
+     * Método alternativo para verificar permisos de forma más robusta
+     * Usa query builder directo para evitar problemas con esquemas
+     */
+    public function tienePermiso($nombrePermiso)
+    {
+        return \DB::table('carga_horaria.rol_permiso as rp')
+            ->join('carga_horaria.permiso as p', 'rp.id_permiso', '=', 'p.id_permiso')
+            ->where('rp.id_rol', $this->id_rol)
+            ->where('p.nombre', $nombrePermiso)
+            ->exists();
     }
 }

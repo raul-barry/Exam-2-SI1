@@ -14,6 +14,18 @@ class HorarioController extends Controller
      */
     public function index(Request $request)
     {
+        // Log para debug: quién hace la petición a /horarios
+        try {
+            $usuario = auth('sanctum')->user();
+            \Log::info('API /horarios called', [
+                'ci' => $usuario ? $usuario->ci_persona : null,
+                'rol' => $usuario && $usuario->rol ? $usuario->rol->nombre : null,
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning('No se pudo obtener usuario en /horarios: ' . $e->getMessage());
+        }
+
+        // Sin filtro por rol, devolver todos los horarios para cualquier usuario autenticado
         $horarios = Horario::query()
             ->when($request->dias_semana, function ($query, $dia) {
                 $query->porDia($dia);
@@ -23,7 +35,7 @@ class HorarioController extends Controller
             })
             ->orderBy('dias_semana')
             ->orderBy('hora_inicio')
-            ->paginate($request->per_page ?? 20);
+            ->paginate($request->per_page ?? 1000); // Aumentar el límite para combos
 
         return response()->json($horarios);
     }

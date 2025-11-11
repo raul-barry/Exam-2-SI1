@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Dashboard API</title>
+</head>
+<body>
+    <h1>Test Dashboard API</h1>
+    <pre id="output"></pre>
+    
+    <script>
+        async function testDashboard() {
+            const output = document.getElementById('output');
+            try {
+                output.textContent = 'Probando /api/dashboard...\n';
+                
+                // Obtener el token del localStorage (si existe)
+                const token = localStorage.getItem('auth_token');
+                
+                if (!token) {
+                    output.textContent += 'Error: No hay token de autenticación en localStorage\n';
+                    output.textContent += 'Necesitas estar autenticado. Ve a http://localhost:8000 e inicia sesión.\n';
+                    return;
+                }
+                
+                const response = await fetch('http://localhost:8000/api/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                output.textContent += `Status: ${response.status}\n`;
+                output.textContent += `Headers: ${JSON.stringify([...response.headers.entries()])}\n\n`;
+                
+                const data = await response.json();
+                output.textContent += 'Response:\n' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                output.textContent += `Error: ${error.message}`;
+            }
+        }
+        
+        // Ejecutar después de 1 segundo
+        setTimeout(testDashboard, 1000);
+    </script>
+</body>
+</html>
