@@ -18,14 +18,17 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copiar archivos del proyecto
 COPY . .
 
+# Crear directorios necesarios ANTES de composer
+RUN mkdir -p storage/logs bootstrap/cache && chmod -R 777 storage bootstrap
+
 # Instalar dependencias PHP
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Instalar y compilar frontend
 RUN npm install && npm run build
 
-# Crear directorios necesarios
-RUN mkdir -p storage/logs bootstrap/cache && chmod -R 777 storage bootstrap
+# Generar APP_KEY si no existe
+RUN php artisan key:generate --force || true
 
 # Exponer puerto
 EXPOSE 10000
