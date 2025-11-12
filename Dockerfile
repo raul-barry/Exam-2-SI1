@@ -27,11 +27,18 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Instalar y compilar frontend
 RUN npm install && npm run build
 
-# Generar APP_KEY si no existe
+# Generar APP_KEY
 RUN php artisan key:generate --force || true
+
+# Crear almacenamiento simbólico
+RUN php artisan storage:link || true
 
 # Exponer puerto
 EXPOSE 10000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:10000/health || exit 1
 
 # Comando de inicio
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]

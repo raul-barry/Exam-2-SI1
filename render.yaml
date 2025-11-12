@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: Exam-2-SI1
+    runtime: docker
+    region: oregon
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: APP_NAME
+        value: AppWebCargaHoraria
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_SCHEMA
+        value: carga_horaria
