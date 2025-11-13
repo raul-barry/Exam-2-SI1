@@ -3,6 +3,13 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 
+Route::get('/', function () {
+    return response()->json([
+        'status' => 'API funcionando',
+        'version' => '1.0'
+    ]);
+});
+
 Route::get('/test-aulas', function () {
     return response()->json(App\Models\Aula::with('infraestructura')->get());
 });
