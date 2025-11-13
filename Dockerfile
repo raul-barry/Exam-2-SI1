@@ -22,7 +22,7 @@ COPY . .
 # Crear directorios necesarios
 RUN mkdir -p storage/logs bootstrap/cache && chmod -R 777 storage bootstrap
 
-# Instalar dependencias PHP
+# Instalar dependencias PHP (sin ejecutar migraciones)
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Instalar y compilar frontend
