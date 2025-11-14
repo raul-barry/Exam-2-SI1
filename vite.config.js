@@ -5,16 +5,18 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/js/app.jsx'],
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.jsx'
+            ],
             refresh: true,
         }),
         react(),
     ],
-    server: {
-        https: true, // Asegura que el servidor de desarrollo use HTTPS
-    },
+
     build: {
-        manifest: true, // Genera un manifiesto para los assets
+        outDir: 'public', // 👈 Compila React dentro de /public
+        emptyOutDir: true, // Limpia carpeta antes de compilar
+        manifest: true,
     },
 });
-
