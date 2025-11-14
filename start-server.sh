@@ -1,5 +1,3 @@
-echo "=========================================="
-echo "Iniciando Apache en puerto $PORT..."
 #!/bin/bash
 
 echo "=========================================="
@@ -12,10 +10,11 @@ php artisan route:clear
 php artisan view:clear
 php artisan cache:clear
 
-# Migraciones
+# Migraciones (solo si la BD está conectada)
 php artisan migrate --force || true
 
-# Iniciar servidor Laravel en el puerto asignado por Render
+# Iniciar servidor Laravel
 echo "Iniciando servidor en puerto $PORT..."
 php artisan serve --host 0.0.0.0 --port $PORT
+
 

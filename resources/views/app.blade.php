@@ -8,7 +8,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.jsx'])
 </head>
 <body>
-    <div id="app">
+    <div id="root">
         <div style="padding:16px;font-family:system-ui,Arial,sans-serif;color:#444">
             Cargando aplicación...
         </div>
