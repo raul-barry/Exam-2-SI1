@@ -8,7 +8,7 @@ COPY . .
 
 # Crear directorios requeridos ANTES de composer
 RUN mkdir -p bootstrap/cache storage/logs storage/framework \
-    && chmod -R 777 bootstrap cache storage
+    && chmod -R 777 bootstrap storage
 
 # Instalar dependencias PHP
 RUN composer install --no-dev --optimize-autoloader --no-interaction
@@ -30,27 +30,21 @@ FROM php:8.2-apache
 
 WORKDIR /var/www/html
 
-# Instalar extensiones necesarias
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     ghostscript \
     && docker-php-ext-install pdo pdo_pgsql
 
-# Habilitar Apache Rewrite
 RUN a2enmod rewrite
 
-# Copiar código
 COPY . .
 
-# Copiar el build de Vite
 COPY --from=vite-build /app/public/build ./public/build
 
-# Copiar vendor
 COPY --from=php-build /app/vendor ./vendor
 
-# Permisos finales
 RUN mkdir -p bootstrap/cache storage \
-    && chmod -R 777 bootstrap/cache storage
+    && chmod -R 777 bootstrap storage
 
 EXPOSE 8080
 
