@@ -3,8 +3,14 @@ FROM composer:2 AS php-build
 
 WORKDIR /app
 
+# Copiar código
 COPY . .
 
+# Crear directorios requeridos ANTES de composer
+RUN mkdir -p bootstrap/cache storage/logs storage/framework \
+    && chmod -R 777 bootstrap cache storage
+
+# Instalar dependencias PHP
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 
@@ -33,16 +39,16 @@ RUN apt-get update && apt-get install -y \
 # Habilitar Apache Rewrite
 RUN a2enmod rewrite
 
-# Copiar código Laravel
+# Copiar código
 COPY . .
 
-# Copiar build de Vite
+# Copiar el build de Vite
 COPY --from=vite-build /app/public/build ./public/build
 
 # Copiar vendor
 COPY --from=php-build /app/vendor ./vendor
 
-# Permisos
+# Permisos finales
 RUN mkdir -p bootstrap/cache storage \
     && chmod -R 777 bootstrap/cache storage
 
