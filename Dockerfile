@@ -8,13 +8,16 @@ RUN apt-get update && apt-get install -y \
     curl \
     libpq-dev \
     postgresql-client \
-    npm \
     unzip \
-    libapache2-mod-php8.2 \
     && docker-php-ext-install pdo pdo_pgsql \
     && a2enmod rewrite \
     && a2enmod headers \
     && rm -rf /var/lib/apt/lists/*
+
+# Instalar Node.js y npm desde el repositorio oficial
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
 
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
