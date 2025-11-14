@@ -21,17 +21,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Configurar el schema de PostgreSQL
+        // Evitar ejecutar lógica de BD si las credenciales no están disponibles
+        if (empty(env('DB_HOST')) || empty(env('DB_USERNAME'))) {
+            return; // Estamos en build o sin conexión real
+        }
+
         if (config('database.default') === 'pgsql') {
             $schema = config('database.connections.pgsql.search_path');
-            
-            // Crear el schema si no existe
-            DB::statement("CREATE SCHEMA IF NOT EXISTS {$schema}");
-            
-            // Establecer el search_path
-            DB::statement("SET search_path TO {$schema}");
-            
-            // Configurar el schema por defecto para migraciones
+
+            try {
+                DB::statement("CREATE SCHEMA IF NOT EXISTS {$schema}");
+                DB::statement("SET search_path TO {$schema}");
+            } catch (\Exception $e) {
+                // Ignorar errores en runtime, no romper despliegue
+            }
+
             Schema::defaultStringLength(255);
         }
     }
