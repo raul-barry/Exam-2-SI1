@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +22,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // FORZAR HTTPS EN PRODUCCIÓN
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         // Evitar ejecutar lógica de BD si las credenciales no están disponibles
         if (empty(env('DB_HOST')) || empty(env('DB_USERNAME'))) {
             return; // Estamos en build o sin conexión real
