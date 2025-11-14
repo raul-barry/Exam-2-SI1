@@ -9,6 +9,7 @@ echo "=========================================="
 # Variables
 MAX_RETRIES=5
 RETRY_COUNT=0
+PORT=${PORT:-8080}
 
 # Verificar que las variables de base de datos existan
 echo "Verificando variables de entorno..."
@@ -81,6 +82,11 @@ if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "base64:" ]; then
     php artisan key:generate --force
 fi
 
+# Configurar Apache
+echo "Configurando Apache..."
+sed -i "s/:80/:$PORT/" /etc/apache2/sites-available/000-default.conf || true
+sed -i "s/:8080/:$PORT/" /etc/apache2/sites-available/000-default.conf || true
+
 # Log del estado
 echo "=========================================="
 echo "✅ Aplicación lista para iniciar"
@@ -89,8 +95,10 @@ echo "APP_ENV: ${APP_ENV:-no configurado}"
 echo "APP_URL: ${APP_URL:-no configurado}"
 echo "DB_HOST: ${DB_HOST:-no configurado}"
 echo "DB_DATABASE: ${DB_DATABASE:-no configurado}"
-echo "PORT: 10000"
+echo "PORT: $PORT"
 echo "=========================================="
 
-# Iniciar servidor Laravel
-exec php artisan serve --host=0.0.0.0 --port=10000
+# Iniciar Apache en primer plano
+echo "Iniciando Apache en puerto $PORT..."
+exec apache2ctl -D FOREGROUND
+
