@@ -50,6 +50,9 @@ COPY . .
 # Copiar assets generados POR VITE y el archivo index.php
 COPY public /var/www/html/public
 
+# Copiar el archivo index.php
+COPY public/index.php /var/www/html/public/index.php
+
 # Copiar vendor del build PHP
 COPY --from=php-build /app/vendor /var/www/html/vendor
 
