@@ -5,10 +5,13 @@ FROM composer:2 AS php-build
 
 WORKDIR /app
 
-COPY composer.json composer.lock ./
+# Copiar PRIMERO todo el proyecto para que artisan esté disponible
+COPY . .
+
+# Instalar dependencias de Laravel
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-COPY . .
+# Crear directorios requeridos y ajustar permisos
 RUN mkdir -p bootstrap/cache storage/logs storage/framework
 RUN chmod -R 777 bootstrap storage
 
