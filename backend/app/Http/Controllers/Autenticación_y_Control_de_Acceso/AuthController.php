@@ -18,14 +18,14 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        // Aceptar ambos nombres de campo (login o ci_persona)
-        $loginValue = $request->input('login') ?? $request->input('ci_persona');
-        $passwordValue = $request->input('contrasena');
+        // Aceptar ambos nombres de campo (login/email o ci_persona)
+        $loginValue = $request->input('login') ?? $request->input('email') ?? $request->input('ci_persona');
+        $passwordValue = $request->input('contrasena') ?? $request->input('password');
         
         // Debug: Log de qué está recibiendo
         \Log::info('=== LOGIN ATTEMPT ===');
         \Log::info('Full request:', $request->all());
-        \Log::info('Login value (from login or ci_persona):', [$loginValue]);
+        \Log::info('Login value (from login, email or ci_persona):', [$loginValue]);
         \Log::info('Password value:', [$passwordValue ? 'present' : 'missing']);
         
         // Validar
