@@ -1,21 +1,21 @@
-# ========================
-# Etapa 1: Builder PHP
-# ========================
+# -------------------------
+# Etapa 1: PHP deps
+# -------------------------
 FROM composer:2 AS php-build
 
 WORKDIR /app
 
-COPY . .
-
-RUN mkdir -p bootstrap/cache storage/logs storage/framework \
-    && chmod -R 777 bootstrap storage
-
+COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
+COPY . .
+RUN mkdir -p bootstrap/cache storage/logs storage/framework
+RUN chmod -R 777 bootstrap storage
 
-# ========================
-# Etapa 2: Builder de Vite (React)
-# ========================
+
+# -------------------------
+# Etapa 2: Build Vite + React
+# -------------------------
 FROM node:18 AS vite-build
 
 WORKDIR /app
@@ -26,13 +26,12 @@ RUN npm install
 COPY resources ./resources
 COPY vite.config.js .
 
-# build de Vite → genera /public/assets y /public/index.html
 RUN npm run build
 
 
-# ========================
-# Etapa 3: Imagen final Apache + PHP
-# ========================
+# -------------------------
+# Etapa 3: Imagen final
+# -------------------------
 FROM php:8.2-apache
 
 WORKDIR /var/www/html
@@ -44,20 +43,14 @@ RUN apt-get update && apt-get install -y \
 
 RUN a2enmod rewrite
 
-# Copiar todo Laravel excepto node_modules
+# Copiar Laravel excepto node_modules
 COPY . .
 
-# Copiar assets generados POR VITE y el archivo index.php
-COPY public /var/www/html/public
+# Copiar SOLO la carpeta build de Vite
+COPY --from=vite-build /app/public/build ./public/build
 
-# Copiar el archivo index.php
-COPY public/index.php /var/www/html/public/index.php
-
-# Copiar el archivo index.html
-COPY public/index.html /var/www/html/public/index.html
-
-# Copiar vendor del build PHP
-COPY --from=php-build /app/vendor /var/www/html/vendor
+# Copiar vendor
+COPY --from=php-build /app/vendor ./vendor
 
 RUN mkdir -p bootstrap/cache storage \
     && chmod -R 777 bootstrap storage
