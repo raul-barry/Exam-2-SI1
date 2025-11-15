@@ -1,11 +1,11 @@
 {
   "resources/js/app.jsx": {
-    "file": "assets/app-CI2ckYtN.js",
-    "name": "app",
+    "file": "assets/main-BzNT9A5A.js",
+    "name": "main",
     "src": "resources/js/app.jsx",
     "isEntry": true,
     "css": [
-      "assets/app-Bs45-V2C.css"
+      "assets/main-Bs45-V2C.css"
     ]
   }
 }
