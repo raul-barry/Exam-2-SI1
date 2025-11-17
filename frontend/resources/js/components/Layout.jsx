@@ -8,8 +8,6 @@ function Layout() {
     const { isAuthenticated, loading, user } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    console.log('🏗️ Layout render:', { isAuthenticated, loading, hasUser: !!user });
-
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50">
@@ -22,11 +20,8 @@ function Layout() {
     }
 
     if (!isAuthenticated) {
-        console.log('❌ No autenticado, redirigiendo a login...');
         return <Navigate to="/login" replace />;
     }
-
-    console.log('✅ Autenticado, mostrando layout');
     
     return (
         <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-red-50">

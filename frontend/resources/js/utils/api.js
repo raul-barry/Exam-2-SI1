@@ -5,47 +5,45 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-    }
+    },
+    timeout: 60000, // 60 segundos timeout (para Aiven cloud)
 });
 
-// Adjuntar token si existe
+// Adjuntar token si existe - OPTIMIZADO sin logs
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
-    console.log('🔵 API Request:', config.method.toUpperCase(), config.url);
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log('🔑 Token incluido en la petición');
-    } else {
-        console.log('⚠️ No hay token en localStorage');
     }
     return config;
 });
 
-// Manejo de errores - NO redirigir automáticamente
+// Manejo de errores optimizado
 api.interceptors.response.use(
     response => {
-        console.log('✅ API Response:', response.config.url, '- Status:', response.status);
-        
-        // WORKAROUND: Si la respuesta es un string que empieza con "7", quitar el "7"
-        if (typeof response.data === 'string' && response.data.startsWith('7')) {
-            console.warn('⚠️ Detectado "7" al inicio de la respuesta, limpiando...');
-            try {
-                response.data = JSON.parse(response.data.substring(1));
-                console.log('✅ Respuesta parseada correctamente:', response.data);
-            } catch (e) {
-                console.error('❌ Error al parsear respuesta limpia:', e);
-            }
-        }
-        
+        // Sin logs en producción
         return response;
     },
     error => {
-        console.error('❌ API Error:', error.config?.url, '- Status:', error.response?.status);
-        console.error('Error completo:', error);
-        // Solo loggear el error, no redirigir automáticamente
-        if (error.response?.status === 401) {
-            console.warn('⚠️ Error 401 - No autorizado');
+        
+        // Intentar limpiar el "7" también en errores
+        if (error.response && typeof error.response.data === 'string') {
+            if (error.response.data.startsWith('7')) {
+                try {
+                    error.response.data = JSON.parse(error.response.data.substring(1));
+                } catch (e) {
+                    // Si falla, mantener el error original
+                }
+            }
         }
+        
+        // Solo loggear errores críticos
+        if (error.response?.status === 401) {
+            console.warn('Sesión expirada');
+        } else if (error.response?.status >= 500) {
+            console.error('Error del servidor:', error.response.data);
+        }
+        
         return Promise.reject(error);
     }
 );

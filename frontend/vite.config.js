@@ -5,7 +5,10 @@ import path from 'path';
 
 export default defineConfig({
     plugins: [
-        react(),
+        react({
+            // Optimizaciones para React sin dependencias adicionales
+            fastRefresh: true,
+        }),
         {
             name: 'copy-manifest',
             writeBundle() {
@@ -24,9 +27,26 @@ export default defineConfig({
         manifest: true,
         outDir: 'public/build',
         emptyOutDir: true,
+        // Optimizaciones de build
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                drop_debugger: true
+            }
+        },
+        // Optimizar chunk splitting
+        chunkSizeWarningLimit: 1000,
         rollupOptions: {
             input: {
                 main: 'resources/js/app.jsx'
+            },
+            output: {
+                manualChunks: {
+                    // Separar vendor chunks para mejor caching
+                    'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+                    'axios-vendor': ['axios']
+                }
             }
         }
     },
@@ -41,5 +61,10 @@ export default defineConfig({
             port: 5173,
             protocol: 'ws'
         }
+    },
+    
+    // Optimizaciones adicionales
+    optimizeDeps: {
+        include: ['react', 'react-dom', 'react-router-dom', 'axios']
     }
 });
