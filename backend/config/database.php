@@ -97,7 +97,7 @@ return [
             'search_path' => env('DB_SCHEMA', 'carga_horaria'),
             'sslmode' => env('DB_SSLMODE', 'prefer'),
             'options' => [
-                \PDO::ATTR_TIMEOUT => 5, // Timeout de conexión 5 segundos
+                \PDO::ATTR_TIMEOUT => env('DB_TIMEOUT', 15), // aumentar tolerancia a latencia (Aiven/Railway)
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
             ],
         ],
