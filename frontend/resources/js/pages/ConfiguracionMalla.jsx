@@ -17,6 +17,9 @@ const ConfiguracionMalla = () => {
 
     const generarMallaAutomatica = () => {
         setTurnos(turnosRecomendados);
+        setTimeout(() => {
+            generarMalla();
+        }, 0);
     };
     const [diasSemana, setDiasSemana] = useState([1, 2, 3, 4, 5]); // Lunes a Viernes
     const [franjas, setFranjas] = useState([]);
