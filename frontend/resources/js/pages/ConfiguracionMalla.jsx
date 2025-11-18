@@ -7,6 +7,17 @@ const ConfiguracionMalla = () => {
         { nombre: 'Mañana', hora_inicio: '06:00', hora_fin: '12:00', duracion_bloque_minutos: 60 },
         { nombre: 'Tarde', hora_inicio: '13:00', hora_fin: '19:00', duracion_bloque_minutos: 60 },
     ]);
+
+    // Turnos recomendados para generación automática
+    const turnosRecomendados = [
+        { nombre: 'Mañana', hora_inicio: '06:00', hora_fin: '12:00', duracion_bloque_minutos: 60 },
+        { nombre: 'Tarde', hora_inicio: '13:00', hora_fin: '19:00', duracion_bloque_minutos: 60 },
+        { nombre: 'Noche', hora_inicio: '19:00', hora_fin: '22:00', duracion_bloque_minutos: 60 }
+    ];
+
+    const generarMallaAutomatica = () => {
+        setTurnos(turnosRecomendados);
+    };
     const [diasSemana, setDiasSemana] = useState([1, 2, 3, 4, 5]); // Lunes a Viernes
     const [franjas, setFranjas] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -187,6 +198,20 @@ const ConfiguracionMalla = () => {
                     {/* Turnos */}
                     <div className="form-group">
                         <h3>Turnos</h3>
+                        <button
+                            onClick={generarMallaAutomatica}
+                            style={{
+                                marginBottom: '15px',
+                                backgroundColor: '#17a2b8',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                padding: '8px 15px',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Generar Malla Automática
+                        </button>
                         {turnos.map((turno, index) => (
                             <div key={index} className="turno-row" style={{ marginBottom: '20px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px' }}>
