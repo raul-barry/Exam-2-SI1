@@ -1,49 +1,23 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import fs from 'fs';
-import path from 'path';
 
 export default defineConfig({
     plugins: [
         react({
-            // Optimizaciones para React sin dependencias adicionales
             fastRefresh: true,
-        }),
-        {
-            name: 'copy-manifest',
-            writeBundle() {
-                const manifestPath = path.resolve('./public/build/.vite/manifest.json');
-                const destPath = path.resolve('./public/build/manifest.json');
-                
-                if (fs.existsSync(manifestPath)) {
-                    fs.copyFileSync(manifestPath, destPath);
-                    console.log('✓ Manifest copiado a build/manifest.json');
-                }
-            }
-        }
+        })
     ],
 
     build: {
         manifest: true,
-        outDir: 'public/build',
+        outDir: 'dist',
         emptyOutDir: true,
-        // Optimizaciones de build
-        minify: 'terser',
-        terserOptions: {
-            compress: {
-                drop_console: true,
-                drop_debugger: true
-            }
-        },
-        // Optimizar chunk splitting
+        minify: 'esbuild',
         chunkSizeWarningLimit: 1000,
         rollupOptions: {
-            input: {
-                main: 'resources/js/app.jsx'
-            },
+            input: './index.html',
             output: {
                 manualChunks: {
-                    // Separar vendor chunks para mejor caching
                     'react-vendor': ['react', 'react-dom', 'react-router-dom'],
                     'axios-vendor': ['axios']
                 }
@@ -63,7 +37,6 @@ export default defineConfig({
         }
     },
     
-    // Optimizaciones adicionales
     optimizeDeps: {
         include: ['react', 'react-dom', 'react-router-dom', 'axios']
     }
