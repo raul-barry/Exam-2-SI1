@@ -93,8 +93,11 @@ class MallaHorariaController extends Controller
 
             // Limpiar datos previos respetando dependencias (asignaciones -> horarios)
             $connection = DB::connection('pgsql');
-            $schema = $connection->getConfig('search_path') ?? env('DB_SCHEMA', 'public');
-            $schema = trim(explode(',', $schema)[0], ' "');
+            $schema = (string) ($connection->getConfig('search_path') ?? env('DB_SCHEMA', 'public'));
+            if ($schema === '') {
+                $schema = 'public';
+            }
+            $schema = trim(explode(',', $schema)[0] ?? 'public', ' "');
             DB::statement("TRUNCATE TABLE {$schema}.asignacion_horario RESTART IDENTITY CASCADE");
             DB::statement("TRUNCATE TABLE {$schema}.horario RESTART IDENTITY CASCADE");
 
